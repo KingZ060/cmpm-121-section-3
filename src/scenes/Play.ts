@@ -9,8 +9,12 @@ export default class Play extends Phaser.Scene {
 
   starfield?: Phaser.GameObjects.TileSprite;
   spinner?: Phaser.GameObjects.Shape;
+  spaceship?: Phaser.GameObjects.Graphics;
 
   rotationSpeed = Phaser.Math.PI2 / 1000; // radians per millisecond
+
+  isLaunching: boolean = false;
+  spaceshipSpeed: number = 5;
 
   constructor() {
     super("play");
@@ -42,6 +46,12 @@ export default class Play extends Phaser.Scene {
       .setOrigin(0, 0);
 
     this.spinner = this.add.rectangle(100, 100, 50, 50, 0xff0000);
+    this.spaceship = this.add.graphics({
+      x: (this.game.config.width as number) / 2,
+      y: (this.game.config.height as number) - 30,
+    });
+    this.spaceship.fillStyle(0xff0000);
+    this.spaceship.fillTriangle(-10, 10, 10, 10, 0, -10);
   }
 
   update(_timeMs: number, delta: number) {
@@ -60,6 +70,29 @@ export default class Play extends Phaser.Scene {
         scale: { from: 1.5, to: 1 },
         duration: 300,
         ease: Phaser.Math.Easing.Sine.Out,
+      });
+    }
+
+    if (!this.isLaunching) {
+      if (this.left!.isDown) {
+        this.spaceship!.x -= this.spaceshipSpeed;
+      }
+      if (this.right!.isDown) {
+        this.spaceship!.x += this.spaceshipSpeed;
+      }
+    }
+    if (this.fire!.isDown && !this.isLaunching) {
+      this.isLaunching = true;
+
+      this.tweens.add({
+        targets: this.spaceship,
+        y: 0,
+        duration: 2000,
+        ease: Phaser.Math.Easing.Sine.Out,
+        onComplete: () => {
+          this.isLaunching = false;
+          this.spaceship!.y = (this.game.config.height as number) - 30;
+        },
       });
     }
   }
