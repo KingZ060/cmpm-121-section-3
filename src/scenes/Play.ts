@@ -10,6 +10,8 @@ export default class Play extends Phaser.Scene {
   starfield?: Phaser.GameObjects.TileSprite;
   spinner?: Phaser.GameObjects.Shape;
   spaceship?: Phaser.GameObjects.Graphics;
+  enemies?: Phaser.GameObjects.Group;
+  enemy?: Phaser.GameObjects.Text;
 
   rotationSpeed = Phaser.Math.PI2 / 1000; // radians per millisecond
 
@@ -46,12 +48,33 @@ export default class Play extends Phaser.Scene {
       .setOrigin(0, 0);
 
     this.spinner = this.add.rectangle(100, 100, 50, 50, 0xff0000);
+
     this.spaceship = this.add.graphics({
       x: (this.game.config.width as number) / 2,
       y: (this.game.config.height as number) - 30,
     });
     this.spaceship.fillStyle(0xff0000);
     this.spaceship.fillTriangle(-10, 10, 10, 10, 0, -10);
+    this.physics.world.enable(this.spaceship);
+    (this.spaceship.body as Phaser.Physics.Arcade.Body)
+      .setSize(20, 20)
+      .setOffset(-10, -10);
+
+    this.enemies = this.add.group();
+    const initY = 0;
+    for (let i = 0; i < 3; i++) {
+      this.enemy = this.add.text(
+        (this.game.config.width as number) - 100,
+        initY + 100 * i,
+        "🛸",
+        {
+          font: "48px Arial",
+        },
+      );
+      this.physics.world.enable(this.enemy);
+      (this.enemy.body as Phaser.Physics.Arcade.Body).setVelocityX(-100); // move from right to left
+      this.enemies.add(this.enemy);
+    }
   }
 
   update(_timeMs: number, delta: number) {
@@ -80,6 +103,12 @@ export default class Play extends Phaser.Scene {
       if (this.right!.isDown) {
         this.spaceship!.x += this.spaceshipSpeed;
       }
+
+      this.spaceship!.x = Phaser.Math.Clamp(
+        this.spaceship!.x,
+        0,
+        this.game.config.width as number,
+      );
     }
     if (this.fire!.isDown && !this.isLaunching) {
       this.isLaunching = true;
@@ -93,6 +122,15 @@ export default class Play extends Phaser.Scene {
           this.isLaunching = false;
           this.spaceship!.y = (this.game.config.height as number) - 30;
         },
+      });
+    }
+    if (this.enemies) {
+      this.enemies.getChildren().forEach((enemy) => {
+        (enemy as Phaser.GameObjects.Text).x -= 0.5; // Adjust the number 2 to control the speed of movement
+        if ((enemy as Phaser.GameObjects.Text).x <= 0) {
+          (enemy as Phaser.GameObjects.Text).x = this.game.config
+            .width as number;
+        }
       });
     }
   }
